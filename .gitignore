@@ -18,6 +18,6 @@ __pycache__/
 .idea/
 .vscode/
 
-*.log
+bot.log*
 
 prices.db

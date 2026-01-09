@@ -1,7 +1,10 @@
 import re
 import json
+import logging
 from bs4 import BeautifulSoup
 from core.sites.base import BaseParser
+
+logger = logging.getLogger(__name__)
 
 class CitilinkParser(BaseParser):
     def _get_id(self, url: str):
@@ -15,11 +18,10 @@ class CitilinkParser(BaseParser):
         if not product_id:
             return {"error": "Не удалось найти ID товара."}
 
-        # Скачиваем HTML
         html = await self.make_request(url, json=False)
         
         if not html:
-            return {"error": "Ситилинк не открывается (возможно, блокировка)."}
+            return {"error": "Ситилинк не открывается (возможно, блокировка IP)."}
 
         soup = BeautifulSoup(html, "html.parser")
 
@@ -27,67 +29,73 @@ class CitilinkParser(BaseParser):
         price = 0
         image_url = ""
 
-        # 1. Пробуем найти JSON-LD
+        # === СТРАТЕГИЯ 1: JSON-LD ===
         scripts = soup.find_all("script", type="application/ld+json")
         for script in scripts:
             try:
                 if not script.string: continue
                 data = json.loads(script.string)
                 
-                # Ищем структуру Product
-                if data.get("@type") == "Product":
-                    name = data.get("name", name)
-                    
-                    # === ИСПРАВЛЕНИЕ КАРТИНКИ ===
-                    raw_img = data.get("image")
-                    if raw_img:
-                        if isinstance(raw_img, str):
-                            # Если это просто строка
-                            image_url = raw_img
-                        elif isinstance(raw_img, list) and len(raw_img) > 0:
-                            # Если это список (наш случай)
-                            first_img = raw_img[0]
-                            if isinstance(first_img, str):
-                                image_url = first_img
-                            elif isinstance(first_img, dict):
-                                image_url = first_img.get('url') or first_img.get('contentUrl')
-                        elif isinstance(raw_img, dict):
-                            # Если это словарь
-                            image_url = raw_img.get('url') or raw_img.get('contentUrl')
-                    # ============================
-                    
-                    offers = data.get("offers", {})
-                    if isinstance(offers, dict):
-                        price = float(offers.get("price", 0))
-                    elif isinstance(offers, list) and offers:
-                        price = float(offers[0].get("price", 0))
-                    
-                    if price > 0:
-                        break
+                if isinstance(data, list):
+                    items = data
+                else:
+                    items = [data]
+
+                for item in items:
+                    if item.get("@type") == "Product":
+                        name = item.get("name", name)
+                        
+                        # --- ИСПРАВЛЕННАЯ ОБРАБОТКА КАРТИНКИ ---
+                        img_data = item.get("image")
+                        if img_data:
+                            if isinstance(img_data, str):
+                                # Если просто строка
+                                image_url = img_data
+                            elif isinstance(img_data, list) and len(img_data) > 0:
+                                # Если список ['url', 'url'] или [{'url':...}]
+                                first = img_data[0]
+                                if isinstance(first, str):
+                                    image_url = first
+                                elif isinstance(first, dict):
+                                    image_url = first.get('url') or first.get('contentUrl')
+                            elif isinstance(img_data, dict):
+                                # Если словарь {'url': '...', ...}
+                                image_url = img_data.get('url') or img_data.get('contentUrl')
+                        # ---------------------------------------
+                        
+                        offers = item.get("offers", {})
+                        if isinstance(offers, dict):
+                            price = float(offers.get("price", 0))
+                        elif isinstance(offers, list) and offers:
+                            price = float(offers[0].get("price", 0))
+                        
+                        if price > 0: break
+                if price > 0: break
             except:
                 continue
 
-        # 2. Если JSON не сработал или там не было цены
+        # === СТРАТЕГИЯ 2: Мета-теги ===
         if price == 0:
-            price_meta = soup.find("meta", {"itemprop": "price"})
-            if price_meta:
-                try:
+            try:
+                price_meta = soup.find("meta", {"itemprop": "price"})
+                if price_meta:
                     price = float(price_meta.get("content"))
-                except: pass
+            except: pass
 
-        # 3. Дополнительные проверки названия и картинки
         if name == "Товар Ситилинк":
             h1 = soup.find("h1")
             if h1: name = h1.get_text(strip=True)
 
-        # Если картинка не нашлась в JSON, ищем в мета-тегах
-        if not image_url or not isinstance(image_url, str):
+        if not image_url:
             img_meta = soup.find("meta", {"property": "og:image"})
-            if img_meta: 
-                image_url = img_meta.get("content")
+            if img_meta: image_url = img_meta.get("content")
+
+        # Финальная защита: если image_url всё равно не строка, делаем пустой
+        if not isinstance(image_url, str):
+            image_url = ""
 
         if price == 0:
-            return {"error": "Не удалось найти цену (возможно, товар закончился)."}
+            return {"error": "Цена не найдена (возможно, блокировка)."}
 
         return {
             "shop": "Ситилинк",

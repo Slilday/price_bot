@@ -4,17 +4,19 @@ import math
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 def item_actions_kb(item_id: int, current_page: int = 1):
-    """Кнопки управления товаром"""
     kb = [
         [
             InlineKeyboardButton(text="📉 История", callback_data=f"hist_{item_id}"),
-            InlineKeyboardButton(text="✏️ Имя", callback_data=f"rename_{item_id}") # Новая кнопка
+            InlineKeyboardButton(text="✏️ Имя", callback_data=f"rename_{item_id}")
         ],
-        [InlineKeyboardButton(text="🗑 Удалить", callback_data=f"del_{item_id}")],
+        [
+            # НОВАЯ КНОПКА
+            InlineKeyboardButton(text="🎯 Цель", callback_data=f"target_{item_id}"), 
+            InlineKeyboardButton(text="🗑 Удалить", callback_data=f"del_{item_id}")
+        ],
         [InlineKeyboardButton(text="🔙 К списку", callback_data=f"list_page_{current_page}")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)
-
 
 def paginated_items_kb(items, total_items, page: int = 1, page_size: int = 5):
     """Клавиатура для списка с пагинацией (⬅️, 📄 1/3, ➡️)."""
