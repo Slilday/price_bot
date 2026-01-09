@@ -1,0 +1,7 @@
+aiogram>=3.0.0
+aiohttp
+beautifulsoup4
+aiosqlite
+matplotlib
+python-dotenv
+fake-useragent
