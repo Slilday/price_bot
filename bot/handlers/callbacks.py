@@ -9,7 +9,6 @@ from bot.keyboards.reply import cancel_kb
 
 router = Router()
 
-# --- Вспомогательная функция для отображения страницы списка ---
 async def show_list_page(callback: types.CallbackQuery, page: int = 1):
     user_id = callback.from_user.id
     page_size = 5
@@ -36,18 +35,12 @@ async def show_list_page(callback: types.CallbackQuery, page: int = 1):
             reply_markup=keyboard
         )
 
-# ==========================================
-# ОБРАБОТЧИКИ КНОПОК
-# ==========================================
-
-# 1. ПЕРЕЛИСТЫВАНИЕ СТРАНИЦ
 @router.callback_query(F.data.startswith("list_page_"))
 async def callback_list_page(callback: types.CallbackQuery):
     page = int(callback.data.split("_")[2])
     await show_list_page(callback, page)
     await callback.answer()
 
-# 2. ПОКАЗ КАРТОЧКИ ТОВАРА (При нажатии на название в списке)
 @router.callback_query(F.data.startswith("show_item_"))
 async def callback_show_item(callback: types.CallbackQuery):
     parts = callback.data.split("_")
@@ -59,7 +52,6 @@ async def callback_show_item(callback: types.CallbackQuery):
         await callback.answer("Товар не найден (возможно, удален)", show_alert=True)
         return
 
-    # Безопасное получение целевой цены (чтобы не было ошибки IndexError)
     try:
         target_price = item['target_price']
     except (IndexError, KeyError):
@@ -75,7 +67,6 @@ async def callback_show_item(callback: types.CallbackQuery):
 
     keyboard = item_actions_kb(item_id, current_page=page)
     
-    # Удаляем список и присылаем карточку (так надежнее для картинок)
     await callback.message.delete()
     if item['image_url']:
         try:
@@ -86,7 +77,6 @@ async def callback_show_item(callback: types.CallbackQuery):
         await callback.message.answer(text, parse_mode="Markdown", reply_markup=keyboard)
     await callback.answer()
 
-# 3. УДАЛЕНИЕ ТОВАРА
 @router.callback_query(F.data.startswith("del_"))
 async def callback_delete(callback: types.CallbackQuery):
     item_id = int(callback.data.split("_")[1])
@@ -95,12 +85,10 @@ async def callback_delete(callback: types.CallbackQuery):
     if item:
         await db.delete_item(callback.from_user.id, item['url'])
         await callback.answer("✅ Товар удален!", show_alert=True)
-        # Возвращаемся на 1-ю страницу списка
         await show_list_page(callback, page=1)
     else:
         await callback.answer("❌ Товар уже был удален", show_alert=True)
 
-# 4. ИСТОРИЯ ЦЕН (ГРАФИК)
 @router.callback_query(F.data.startswith("hist_"))
 async def callback_history(callback: types.CallbackQuery):
     item_id = int(callback.data.split("_")[1])
@@ -123,18 +111,15 @@ async def callback_history(callback: types.CallbackQuery):
     else:
         await callback.message.answer("Недостаточно данных для графика.")
 
-# 5. ПЕРЕИМЕНОВАНИЕ
 @router.callback_query(F.data.startswith("rename_"))
 async def callback_start_rename(callback: types.CallbackQuery, state: FSMContext):
     item_id = int(callback.data.split("_")[1])
-    # Запоминаем ID и переводим бота в режим ожидания текста
     await state.update_data(item_id_to_rename=item_id)
     await state.set_state(BotStates.waiting_for_new_name)
     
     await callback.answer()
     await callback.message.answer("✏️ Введите новое название для товара:", reply_markup=cancel_kb())
 
-# 6. ЦЕЛЕВАЯ ЦЕНА (TARGET PRICE)
 @router.callback_query(F.data.startswith("target_"))
 async def callback_set_target(callback: types.CallbackQuery, state: FSMContext):
     item_id = int(callback.data.split("_")[1])
@@ -144,7 +129,6 @@ async def callback_set_target(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("Товар не найден", show_alert=True)
         return
 
-    # Запоминаем ID и переводим бота в режим ожидания цены
     await state.update_data(item_id_for_target=item_id)
     await state.set_state(BotStates.waiting_for_target_price)
     
@@ -167,7 +151,6 @@ async def callback_set_target(callback: types.CallbackQuery, state: FSMContext):
         parse_mode="Markdown"
     )
 
-# 7. ПУСТАЯ КНОПКА (Номер страницы)
 @router.callback_query(F.data == "noop")
 async def callback_noop(callback: types.CallbackQuery):
     await callback.answer()

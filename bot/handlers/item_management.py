@@ -12,7 +12,6 @@ from services.plotter import create_price_plot
 router = Router()
 parser_manager = ParserManager()
 
-# --- Вспомогательная функция ---
 def format_items_text(items_list):
     items_list.sort(key=lambda x: (x['shop'], x['name']))
     text_lines = ["📋 **Ваши товары:**"]
@@ -21,11 +20,8 @@ def format_items_text(items_list):
         if item['shop'] != current_shop:
             current_shop = item['shop']
             emoji = "🛒"
-            if "Wildberries" in current_shop: emoji = "🟣"
-            elif "Steam" in current_shop: emoji = "🎮"
+            if "Steam" in current_shop: emoji = "🎮"
             elif "Ситилинк" in current_shop: emoji = "🟠"
-            elif "Яндекс.Маркет" in current_shop: emoji = "🟡"
-            elif "DNS" in current_shop: emoji = "👽"
             text_lines.append(f"\n{emoji} **{current_shop}**")
         name = item['name'][:25] + ".." if len(item['name']) > 25 else item['name']
         price = f"{item['last_price']} ₽"
@@ -33,7 +29,6 @@ def format_items_text(items_list):
     text_lines.append("\n👇 *Нажмите номер для управления:*")
     return "\n".join(text_lines), items_list
 
-# --- ДОБАВЛЕНИЕ ---
 @router.message(F.text == "➕ Добавить товар")
 @router.message(Command("add"))
 async def start_add(message: types.Message, state: FSMContext):
@@ -57,7 +52,6 @@ async def process_add_link(message: types.Message, state: FSMContext):
         await status_msg.delete()
         await message.answer(f"❌ Ошибка: {result['error']}", reply_markup=main_menu_kb())
     else:
-        # Добавляем юзера на всякий случай
         await db.add_user(message.from_user.id, message.from_user.username or "User")
         
         item_id = await db.add_item(
@@ -79,7 +73,6 @@ async def process_add_link(message: types.Message, state: FSMContext):
             await message.answer(text, parse_mode="Markdown", reply_markup=keyboard)
         await message.answer("Что делаем дальше?", reply_markup=main_menu_kb())
 
-# --- СПИСОК ---
 @router.message(F.text == "📋 Мои товары")
 @router.message(Command("list"))
 async def show_my_items(message: types.Message, state: FSMContext):
@@ -95,7 +88,6 @@ async def show_my_items(message: types.Message, state: FSMContext):
     keyboard = paginated_items_kb(sorted_items, total_items, 1, page_size)
     await message.answer(f"📋 **Ваши товары (Страница 1):**", reply_markup=keyboard)
 
-# --- УДАЛЕНИЕ ---
 @router.message(F.text == "🗑 Удалить товар")
 @router.message(Command("delete"))
 async def start_delete(message: types.Message, state: FSMContext):
@@ -113,7 +105,6 @@ async def process_delete_link(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("✅ Товар удален (если он был в вашем списке).", reply_markup=main_menu_kb())
 
-# --- ИСТОРИЯ ---
 @router.message(F.text == "📉 История цен")
 @router.message(Command("history"))
 async def start_history(message: types.Message, state: FSMContext):
@@ -143,7 +134,6 @@ async def process_history_link(message: types.Message, state: FSMContext):
         await message.answer("Ошибка графика.", reply_markup=main_menu_kb())
     await state.clear()
     
-# --- ПЕРЕИМЕНОВАНИЕ ---
 @router.message(BotStates.waiting_for_new_name)
 async def process_new_name(message: types.Message, state: FSMContext):
     if message.text == "🔙 Назад":
@@ -162,23 +152,19 @@ async def process_new_name(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer(f"✅ Готово! Товар переименован в «**{new_name}**».", parse_mode="Markdown", reply_markup=main_menu_kb())
 
-# --- !!! НОВЫЙ ОБРАБОТЧИК: ЦЕЛЕВАЯ ЦЕНА !!! ---
 @router.message(BotStates.waiting_for_target_price)
 async def process_target_price(message: types.Message, state: FSMContext):
-    # 1. Проверка отмены
     if message.text == "🔙 Назад":
         await state.clear()
         await message.answer("Настройка цели отменена.", reply_markup=main_menu_kb())
         return
 
     try:
-        # 2. Обработка числа
         text_price = message.text.replace(' ', '').replace(',', '.')
         target = float(text_price)
         
         if target < 0: raise ValueError
-        
-        # 3. Получаем ID товара из памяти
+
         data = await state.get_data()
         item_id = data.get("item_id_for_target")
         
@@ -186,8 +172,6 @@ async def process_target_price(message: types.Message, state: FSMContext):
             await state.clear()
             await message.answer("⚠️ Ошибка: потерян ID товара. Попробуйте снова через меню.", reply_markup=main_menu_kb())
             return
-        
-        # 4. Сохраняем в базу (с отловом ошибок!)
         try:
             success = await db.set_target_price(item_id, target)
             if not success:
@@ -195,12 +179,10 @@ async def process_target_price(message: types.Message, state: FSMContext):
                 await state.clear()
                 return
         except Exception as e:
-            # Вот тут мы поймаем ошибку, если метода нет в db.py
             await message.answer(f"❌ Ошибка базы данных: {e}", reply_markup=main_menu_kb())
             await state.clear()
             return
 
-        # 5. Успех
         await state.clear()
         
         if target > 0:
@@ -213,6 +195,5 @@ async def process_target_price(message: types.Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Пожалуйста, введите корректное число (например: `15000`).")
     except Exception as e:
-        # Глобальный перехватчик ошибок
         await message.answer(f"🔥 Произошла непредвиденная ошибка: {e}", reply_markup=main_menu_kb())
         await state.clear()

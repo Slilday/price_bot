@@ -25,7 +25,6 @@ def setup_logging():
     file_handler.setFormatter(formatter)
     log.addHandler(file_handler)
     
-    # Глушим лишние логи
     logging.getLogger("aiogram").setLevel(logging.WARNING)
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
 
@@ -33,7 +32,6 @@ async def main():
     setup_logging()
     logger = logging.getLogger(__name__)
 
-    # === 1. ИНИЦИАЛИЗАЦИЯ ===
     logger.info("📂 Подключаю базу данных...")
     await db.create_tables()
     logger.info("✅ База данных готова!")
@@ -41,19 +39,16 @@ async def main():
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
 
-    # Регистрируем роутеры
     dp.include_router(item_management.router)
     dp.include_router(user_commands.router)
     dp.include_router(callbacks.router)
 
     logger.info("🤖 Бот запущен и готов к работе!")
     
-    # Запускаем мониторинг
     asyncio.create_task(run_price_monitor(bot))
     
     await bot.delete_webhook(drop_pending_updates=True)
 
-    # === 2. ЦИКЛ ПОДКЛЮЧЕНИЯ ===
     reconnect_delays = [5, 15, 60, 300]
     attempt = 0
     

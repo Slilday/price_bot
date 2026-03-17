@@ -14,36 +14,24 @@ class ParserManager:
         """Очищает URL от UTM-меток."""
         try:
             parsed = urlparse(url)
-            # Собираем URL обратно без query (параметров после ?)
             cleaned_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
             if cleaned_url.endswith(';'):
                 cleaned_url = cleaned_url[:-1]
             return cleaned_url
         except Exception:
-            # Если не удалось очистить, возвращаем как есть
             return url
 
     def __init__(self):
-        self.wb_parser = WbParser()
         self.steam_parser = SteamParser()
         self.citilink_parser = CitilinkParser()
-        self.yandex_parser = YandexParser()
-        self.dns_parser = DnsParser() 
 
         self.parsers = {
-            "wildberries.ru": self.wb_parser,
-            "www.wildberries.ru": self.wb_parser,
             "store.steampowered.com": self.steam_parser,
             "citilink.ru": self.citilink_parser,
             "www.citilink.ru": self.citilink_parser,
-            "market.yandex.ru": self.yandex_parser,
-            "m.market.yandex.ru": self.yandex_parser,
-            "dns-shop.ru": self.dns_parser,
-            "www.dns-shop.ru": self.dns_parser,
         }
 
     async def get_price(self, url: str):
-        # Чистим URL
         cleaned_url = self._clean_url(url)
         logger.info(f"Обработка ссылки: {cleaned_url}")
         
@@ -61,18 +49,15 @@ class ParserManager:
                         break
             
             if not parser:
-                return {"error": f"Магазин {domain} не поддерживается."}
-            
-            # Запускаем парсер
+                return {"error": f"Магазин не поддерживается или ссылка неправильно написана"}
+
             result = await parser.parse(cleaned_url)
-            
-            # Если успех, подменяем URL на чистый (без мусора)
+
             if result and "error" not in result:
                 result['url'] = cleaned_url
             
             return result
             
         except Exception as e:
-            # ЛОГИРУЕМ ПОЛНУЮ ОШИБКУ
             logger.error(f"Ошибка в ParserManager: {e}", exc_info=True)
             return {"error": f"Сбой парсинга: {type(e).__name__} - {e}"}

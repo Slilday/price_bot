@@ -13,7 +13,6 @@ class ProxyManager:
         """Загружает список прокси из файла."""
         try:
             with open(self.proxy_file, 'r') as f:
-                # Читаем, убирая пустые строки и пробелы
                 self.proxies = [line.strip() for line in f if line.strip()]
             
             if self.proxies:
@@ -38,5 +37,4 @@ class ProxyManager:
         count = len(self.proxies)
         return count if count > 0 else 1
 
-# Создаем экземпляр
 proxy_manager = ProxyManager()

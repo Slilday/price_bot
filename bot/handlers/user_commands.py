@@ -16,7 +16,6 @@ async def cmd_start(message: types.Message, state: FSMContext):
         "👋 **Привет! Я Price Monitor Bot.**\n\n"
         "Я помогаю экономить, отслеживая цены на товары. Просто отправь мне ссылку, и я уведомлю тебя, когда цена снизится!\n\n"
         "🛒 **Поддерживаемые магазины:**\n"
-        "🟣 **Wildberries**\n"
         "⚫ **Steam** (Игры)\n"
         "🟠 **Ситилинк**\n\n"
         "👇 **Нажмите «➕ Добавить товар» в меню ниже, чтобы начать!**"
@@ -44,7 +43,6 @@ async def cmd_info(message: types.Message, state: FSMContext):
     )
     await message.answer(text, reply_markup=main_menu_kb(), parse_mode="Markdown")
 
-# === СМЕНА ТЕМЫ ===
 @router.message(Command("black"))
 async def cmd_black(message: types.Message):
     await db.add_user(message.from_user.id, message.from_user.username or "User")
@@ -66,13 +64,10 @@ async def cmd_cancel(message: types.Message, state: FSMContext):
 
 @router.message(Command("threshold"))
 async def cmd_threshold(message: types.Message, command: CommandObject):
-    # command.args — это всё, что идет после /threshold
-    # Например, для "/threshold 10" -> command.args будет "10"
     
     user_id = message.from_user.id
 
     if not command.args:
-        # Если аргументов нет (просто /threshold)
         current_threshold = await db.get_user_threshold(user_id)
         await message.answer(
             f"📈 Ваш текущий порог: **{current_threshold}%**.\n\n"
@@ -83,7 +78,6 @@ async def cmd_threshold(message: types.Message, command: CommandObject):
         return
 
     try:
-        # Пытаемся превратить аргумент в число
         new_threshold = float(command.args.replace(',', '.'))
         if not (0 <= new_threshold <= 100):
             raise ValueError
