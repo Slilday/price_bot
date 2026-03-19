@@ -1,11 +1,9 @@
 import logging
 import traceback
 from urllib.parse import urlparse, urlunparse
-from core.sites.wb import WbParser
+
 from core.sites.steam import SteamParser
 from core.sites.citilink import CitilinkParser
-from core.sites.yandex import YandexParser
-from core.sites.dns import DnsParser 
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,6 @@ class ParserManager:
             parser = self.parsers.get(domain)
             
             if not parser:
-                # Ищем по частичному совпадению
                 for key, p in self.parsers.items():
                     if key in domain:
                         parser = p

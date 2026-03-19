@@ -32,7 +32,6 @@ class ProxyManager:
         """
         Возвращает количество прокси.
         Если список пуст, возвращаем 1 (наш собственный IP).
-        Это нужно для расчета пауз в мониторинге.
         """
         count = len(self.proxies)
         return count if count > 0 else 1

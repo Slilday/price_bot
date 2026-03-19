@@ -50,8 +50,7 @@ class Database:
             await db.commit()
 
     async def add_item(self, user_id: int, url: str, shop: str, name: str, article: str, price: float, image: str | list):
-        # === ЗАЩИТА ОТ СПИСКОВ ===
-        # Если image пришел как список, берем первый элемент
+        #ЗАЩИТА ОТ СПИСКОВ
         if isinstance(image, list):
             image = image[0] if len(image) > 0 else ""
         # =========================
@@ -94,12 +93,7 @@ class Database:
             db.row_factory = aiosqlite.Row
             cursor = await db.execute("SELECT * FROM items")
             return await cursor.fetchall()
-
-    # ... (Остальные методы get_user_items, set_target_price и т.д. остаются без изменений из прошлого файла) ...
-    # Скопируй их из предыдущего ответа, они там правильные.
-    # Главное - новые методы update_last_check и измененный create_tables.
     
-    # Чтобы ты не мучался, вот остальные методы списком:
     async def set_target_price(self, item_id: int, target_price: float):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("SELECT id FROM items WHERE id = ?", (item_id,))
