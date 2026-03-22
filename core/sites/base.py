@@ -22,7 +22,6 @@ class BaseParser:
 
         async with aiohttp.ClientSession() as session:
             try:
-                # ssl=False помогает избежать ошибок с сертификатами
                 async with session.get(url, headers=request_headers, proxy=proxy, timeout=30, ssl=False) as response:
                     if response.status != 200:
                         if not ignore_errors:

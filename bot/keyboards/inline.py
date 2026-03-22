@@ -19,7 +19,7 @@ def item_actions_kb(item_id: int, current_page: int = 1):
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 def paginated_items_kb(items, total_items, page: int = 1, page_size: int = 5):
-    """Клавиатура для списка с пагинацией (⬅️, 📄 1/3, ➡️)."""
+    """Клавиатура для списка (⬅️, 📄 1/3, ➡️)."""
     builder = InlineKeyboardBuilder()
     
     for item in items:

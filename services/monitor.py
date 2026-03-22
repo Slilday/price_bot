@@ -89,7 +89,7 @@ async def run_price_monitor(bot):
                     sleep_time = random.uniform(70, 100) / proxies_count
                 else:
 
-                    sleep_time = random.uniform(8, 15)
+                    sleep_time = random.uniform(9, 18)
                 
                 logger.info(f"💤 Сплю {sleep_time:.1f} сек...")
                 await asyncio.sleep(sleep_time)

@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 class ParserManager:
     def _clean_url(self, url: str):
-        """Очищает URL от UTM-меток."""
         try:
             parsed = urlparse(url)
             cleaned_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))

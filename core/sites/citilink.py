@@ -45,14 +45,12 @@ class CitilinkParser(BaseParser):
                     if item.get("@type") == "Product":
                         name = item.get("name", name)
                         
-                        # --- ИСПРАВЛЕННАЯ ОБРАБОТКА КАРТИНКИ ---
+                        # ОБРАБОТКА КАРТИНКИ 
                         img_data = item.get("image")
                         if img_data:
                             if isinstance(img_data, str):
-                                # Если просто строка
                                 image_url = img_data
                             elif isinstance(img_data, list) and len(img_data) > 0:
-                                # Если список ['url', 'url'] или [{'url':...}]
                                 first = img_data[0]
                                 if isinstance(first, str):
                                     image_url = first
@@ -74,7 +72,6 @@ class CitilinkParser(BaseParser):
             except:
                 continue
 
-        # === СТРАТЕГИЯ 2: Мета-теги ===
         if price == 0:
             try:
                 price_meta = soup.find("meta", {"itemprop": "price"})
@@ -90,7 +87,6 @@ class CitilinkParser(BaseParser):
             img_meta = soup.find("meta", {"property": "og:image"})
             if img_meta: image_url = img_meta.get("content")
 
-        # Финальная защита: если image_url всё равно не строка, делаем пустой
         if not isinstance(image_url, str):
             image_url = ""
 

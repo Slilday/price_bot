@@ -2,7 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def main_menu_kb():
     kb = [
-        [KeyboardButton(text="➕ Добавить товар"), KeyboardButton(text="📋 Мои товары")], # Новая кнопка
+        [KeyboardButton(text="➕ Добавить товар"), KeyboardButton(text="📋 Мои товары")],
         [KeyboardButton(text="📉 История цен"), KeyboardButton(text="ℹ️ Инфо")],
     ]
     return ReplyKeyboardMarkup(
